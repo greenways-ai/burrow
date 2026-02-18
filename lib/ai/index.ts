@@ -1,9 +1,9 @@
 import { AIProvider, AIConfig } from './types';
-import { KimiProvider } from './kimi';
+import { KimiProvider, KimiModel } from './kimi';
 import { VertexProvider } from './vertex';
 
 export * from './types';
-export { KimiProvider } from './kimi';
+export { KimiProvider, type KimiModel } from './kimi';
 export { VertexProvider } from './vertex';
 
 export function createAIProvider(config?: AIConfig): AIProvider {
@@ -12,8 +12,9 @@ export function createAIProvider(config?: AIConfig): AIProvider {
   switch (provider) {
     case 'kimi':
       const kimiKey = config?.apiKey || process.env.KIMI_API_KEY!;
-      const kimiModel = config?.model || process.env.KIMI_MODEL || 'kimi-k2-0711-longcontext';
-      return new KimiProvider(kimiKey, kimiModel, config?.options);
+      const kimiModel: KimiModel = config?.model || process.env.KIMI_MODEL || 'kimi-k2-0711-longcontext';
+      const kimiBaseUrl = process.env.KIMI_BASE_URL || 'https://api.moonshot.cn';
+      return new KimiProvider(kimiKey, kimiModel, kimiBaseUrl, config?.options);
       
     case 'vertex':
       const projectId = process.env.VERTEX_PROJECT_ID!;

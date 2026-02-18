@@ -6,18 +6,28 @@ interface KimiMessage {
   content: string;
 }
 
+export type KimiModel = 
+  | 'kimi-k2-0711-longcontext'
+  | 'kimi-k2-0711'
+  | 'kimi-k1.6'
+  | 'kimi-k1.6-longcontext'
+  | string; // Allow custom model names
+
 export class KimiProvider implements AIProvider {
   private apiKey: string;
-  private model: string;
+  private model: KimiModel;
+  private baseUrl: string;
   private options: AIStreamOptions;
 
   constructor(
     apiKey: string,
-    model: string = 'kimi-k2-0711-longcontext',
+    model: KimiModel = 'kimi-k2-0711-longcontext',
+    baseUrl: string = 'https://api.moonshot.cn',
     options: AIStreamOptions = {}
   ) {
     this.apiKey = apiKey;
     this.model = model;
+    this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.options = {
       temperature: 0.7,
       maxTokens: 4096,
@@ -29,7 +39,7 @@ export class KimiProvider implements AIProvider {
     messages: Message[],
     systemPrompt: string
   ): AsyncGenerator<string> {
-    const url = 'https://api.moonshot.cn/v1/chat/completions';
+    const url = `${this.baseUrl}/v1/chat/completions`;
 
     // Format messages for Kimi API
     const kimiMessages: KimiMessage[] = [
@@ -101,7 +111,7 @@ export class KimiProvider implements AIProvider {
             const content = data.choices?.[0]?.delta?.content || 
                            data.choices?.[0]?.text ||
                            data.delta?.content;
-                           
+                            
             if (content && typeof content === 'string') {
               yield content;
             }
