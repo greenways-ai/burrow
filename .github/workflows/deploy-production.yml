@@ -81,6 +81,9 @@ jobs:
         echo "NETLIFY_SITE_ID=$NETLIFY_SITE_ID" >> $GITHUB_ENV
         cp .secrets/burrow/prod/.env .env.local
         
+    - name: Enable Corepack
+      run: corepack enable
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -88,9 +91,7 @@ jobs:
         cache: 'yarn'
         
     - name: Install dependencies
-      run: |
-        corepack enable
-        yarn install --immutable
+      run: yarn install --immutable
       
     - name: Build application
       run: yarn build
