@@ -1,9 +1,6 @@
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Users table (indexed by wallet address)
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     wallet_address TEXT UNIQUE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     last_login TIMESTAMPTZ DEFAULT NOW()
@@ -14,7 +11,7 @@ CREATE INDEX idx_users_wallet ON users(wallet_address);
 
 -- Conversations table (stores encrypted data)
 CREATE TABLE conversations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT NOT NULL DEFAULT 'New Conversation',
     encrypted_data TEXT NOT NULL,  -- JSON array of encrypted messages
@@ -29,7 +26,7 @@ CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);
 
 -- System prompts table (admin-managed)
 CREATE TABLE system_prompts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     content TEXT NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
     is_active BOOLEAN DEFAULT TRUE,
