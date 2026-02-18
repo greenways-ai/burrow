@@ -80,6 +80,10 @@ jobs:
         echo "NETLIFY_AUTH_TOKEN=$NETLIFY_AUTH_TOKEN" >> $GITHUB_ENV
         echo "NETLIFY_SITE_ID=$NETLIFY_SITE_ID" >> $GITHUB_ENV
         cp .secrets/burrow/prod/.env .env.local
+        # Set build-time environment variables
+        echo "KIMI_API_KEY=$KIMI_API_KEY" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> $GITHUB_ENV
+        echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> $GITHUB_ENV
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
