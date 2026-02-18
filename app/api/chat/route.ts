@@ -18,16 +18,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if Kimi API key is configured
-    const kimiKey = process.env.KIMI_API_KEY;
-    if (!kimiKey) {
-      console.error('KIMI_API_KEY not configured');
-      return Response.json(
-        { error: 'AI provider not configured' },
-        { status: 500 }
-      );
-    }
-
     const supabase = createServiceClient();
 
     // Get active system prompt
@@ -50,45 +40,76 @@ export async function POST(request: NextRequest) {
       },
     ];
 
-    console.log('Creating AI provider...');
-    // Create AI provider
-    const ai = createAIProvider();
+    // Check if Kimi API key is configured and valid
+    const kimiKey = process.env.KIMI_API_KEY;
+    let useKimi = false;
+    
+    if (kimiKey && kimiKey.length > 10 && !kimiKey.includes('your-')) {
+      useKimi = true;
+    }
 
-    // Collect full response for Telegram
-    let fullResponse = '';
-
-    console.log('Starting stream...');
     // Create streaming response
     const stream = new ReadableStream({
       async start(controller) {
-        try {
-          // Stream AI response
-          for await (const chunk of ai.stream(messagesForAI, systemPrompt)) {
-            fullResponse += chunk;
+        let fullResponse = '';
+        let kimiFailed = false;
+
+        if (useKimi) {
+          try {
+            console.log('Creating AI provider...');
+            const ai = createAIProvider();
+
+            console.log('Starting Kimi stream...');
+            // Stream AI response
+            for await (const chunk of ai.stream(messagesForAI, systemPrompt)) {
+              fullResponse += chunk;
+              const data = JSON.stringify({ content: chunk });
+              controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+            }
+            console.log('Kimi stream complete, total length:', fullResponse.length);
+          } catch (aiError) {
+            console.error('Kimi AI error:', aiError);
+            kimiFailed = true;
+            // Don't throw - fall through to Telegram-only mode
+          }
+        }
+
+        // If Kimi failed or not configured, use Telegram-only mode
+        if (!useKimi || kimiFailed) {
+          const fallbackMessage = !useKimi 
+            ? "🔒 **Secure Message Forwarded**\n\nYour message has been securely forwarded to our team. Kimi AI is currently unavailable - please check back later or contact support."
+            : "🔒 **Secure Message Forwarded**\n\nYour message has been securely forwarded to our team. The AI service is temporarily unavailable - please try again in a few minutes.";
+          
+          fullResponse = fallbackMessage;
+          
+          // Stream the fallback message word by word for effect
+          const words = fallbackMessage.split(' ');
+          for (const word of words) {
+            const chunk = word + ' ';
             const data = JSON.stringify({ content: chunk });
             controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+            // Small delay for streaming effect
+            await new Promise(resolve => setTimeout(resolve, 10));
           }
+        }
 
-          console.log('Stream complete, total length:', fullResponse.length);
-          
-          // Send to Telegram after stream completes
+        // Always send to Telegram (regardless of Kimi success)
+        try {
           await sendToTelegram({
             userMessage: message,
             aiResponse: fullResponse,
             walletAddress: walletAddress || 'unknown',
             timestamp: Date.now(),
           });
-          
-          // Send done signal
-          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-          controller.close();
-        } catch (error) {
-          console.error('Streaming error:', error);
-          const errorMsg = error instanceof Error ? error.message : 'Streaming error';
-          const data = JSON.stringify({ error: errorMsg });
-          controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-          controller.close();
+          console.log('Message forwarded to Telegram');
+        } catch (telegramError) {
+          console.error('Telegram send error:', telegramError);
+          // Don't fail the request if Telegram fails
         }
+        
+        // Send done signal
+        controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+        controller.close();
       },
     });
 
