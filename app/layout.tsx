@@ -1,5 +1,5 @@
 import { Inter } from 'next/font/google';
-import { Providers } from '@/components/Providers';
+import { ClientProviders } from './ClientProviders';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -9,6 +9,9 @@ export const metadata = {
   description: 'Private, end-to-end encrypted chat with various AI models.',
 };
 
+// Force static generation - prevents SSR issues with Wagmi
+export const dynamic = 'force-static';
+
 export default function RootLayout({
   children,
 }: {
@@ -17,9 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>
+        <ClientProviders>
           {children}
-        </Providers>
+        </ClientProviders>
       </body>
     </html>
   );
