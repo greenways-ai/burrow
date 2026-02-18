@@ -30,31 +30,20 @@ The following secrets must be configured in GitHub Actions:
 
 | Secret | Description |
 |--------|-------------|
-| `VERCEL_TOKEN` | Vercel authentication token |
-| `VERCEL_ORG_ID` | Vercel organization ID |
-| `VERCEL_PROJECT_ID` | Vercel production project ID |
-| `VERCEL_STAGING_PROJECT_ID` | Vercel staging project ID |
+| `NETLIFY_AUTH_TOKEN` | Netlify personal access token |
 
 All other configuration (Supabase URLs, API keys, etc.) is loaded from the dot-secrets submodule.
 
 ## Initial Setup
 
-### 1. Configure Vercel
+### 1. Configure Netlify
 
-1. Create projects on Vercel:
-   ```bash
-   # Production
-   vercel --prod
-   
-   # Staging
-   vercel
-   ```
-
-2. Get the project IDs from Vercel dashboard
+1. Site should already be created: `burrow-greenways-ai`
+2. Site ID: `1e59d9a3-471f-47bb-b144-11f29177b527`
 
 3. Add to GitHub Secrets:
    - Go to Settings > Secrets and variables > Actions
-   - Add `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VERCEL_STAGING_PROJECT_ID`
+   - Add `NETLIFY_AUTH_TOKEN` (generate at https://app.netlify.com/user/applications/personal)
 
 ### 2. Configure dot-secrets
 
@@ -81,16 +70,13 @@ All other configuration (Supabase URLs, API keys, etc.) is loaded from the dot-s
 
 ### 3. Configure Supabase
 
-1. Create Supabase projects (production & staging)
-
+1. Supabase project should already be created
 2. Run initial migrations:
    ```bash
    supabase login
-   supabase link --project-ref your-project-ref
+   supabase link --project-ref puyrhntsyytzlldsgxit
    supabase migration up
    ```
-
-3. Update `supabase.env` files in dot-secrets with project refs
 
 ## Workflows
 
@@ -113,7 +99,7 @@ Triggered by:
 
 **Jobs:**
 1. **Deploy Supabase** - Pushes database migrations
-2. **Deploy Vercel** - Builds and deploys to Vercel production
+2. **Deploy Netlify** - Builds and deploys to Netlify production
 
 ### Deploy to Staging (`deploy-staging.yml`)
 
