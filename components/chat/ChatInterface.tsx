@@ -6,8 +6,9 @@ import { useChat } from '@/hooks/useChat';
 import { useConversations } from '@/hooks/useConversations';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import { Fingerprint, Lock, Scan } from '@/components/icons';
+import { Fingerprint, Lock, Scan, FileSearch, MessageSquare, X } from '@/components/icons';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { AnalysisWorkflow } from '@/components/analysis/AnalysisWorkflow';
 
 interface ChatInterfaceProps {
   conversationId: string | null;
@@ -19,6 +20,7 @@ export function ChatInterface({
   onConversationCreated 
 }: ChatInterfaceProps) {
   const { address } = useAccount();
+  const [mode, setMode] = useState<'chat' | 'analysis'>('chat');
   const {
     messages,
     isStreaming,
@@ -37,13 +39,13 @@ export function ChatInterface({
   }, [messages]);
 
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && mode === 'chat') {
       setIsLoading(true);
       loadConversation(conversationId).finally(() => setIsLoading(false));
-    } else {
+    } else if (!conversationId) {
       startNewConversation();
     }
-  }, [conversationId, loadConversation, startNewConversation]);
+  }, [conversationId, loadConversation, startNewConversation, mode]);
 
   useEffect(() => {
     if (currentConversationId && !conversationId) {
@@ -65,7 +67,7 @@ export function ChatInterface({
           </div>
           <div>
             <h1 className="font-bold tracking-wide text-text-primary">
-              {conversationId ? 'SECURE SESSION' : 'NEW SESSION'}
+              {mode === 'analysis' ? 'FORENSIC ANALYSIS' : (conversationId ? 'SECURE SESSION' : 'NEW SESSION')}
             </h1>
             <div className="flex items-center gap-2 text-xs">
               <Lock className="w-3 h-3 text-accent" />
@@ -75,6 +77,32 @@ export function ChatInterface({
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Mode Toggle */}
+          <div className="flex bg-background border border-border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setMode('chat')}
+              className={`px-4 py-2 text-sm font-medium uppercase tracking-wider transition-colors flex items-center gap-2 ${
+                mode === 'chat'
+                  ? 'bg-accent text-white'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Chat
+            </button>
+            <button
+              onClick={() => setMode('analysis')}
+              className={`px-4 py-2 text-sm font-medium uppercase tracking-wider transition-colors flex items-center gap-2 ${
+                mode === 'analysis'
+                  ? 'bg-accent text-white'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <FileSearch className="w-4 h-4" />
+              Analyze
+            </button>
+          </div>
+          
           <ThemeToggle />
           <a
             href="/admin"
@@ -85,10 +113,14 @@ export function ChatInterface({
         </div>
       </header>
 
-      {/* Messages Area */}
+      {/* Content Area */}
       <div className="flex-1 overflow-y-auto">
-        {messages.length === 0 && !isLoading ? (
-          <EmptyState />
+        {mode === 'analysis' ? (
+          <div className="h-full py-8">
+            <AnalysisWorkflow onComplete={() => {}} />
+          </div>
+        ) : messages.length === 0 && !isLoading ? (
+          <EmptyState onStartAnalysis={() => setMode('analysis')} />
         ) : (
           <div className="max-w-3xl mx-auto px-4 py-8">
             <MessageList 
@@ -101,30 +133,32 @@ export function ChatInterface({
       </div>
 
       {/* Error Banner */}
-      {chatError && (
+      {chatError && mode === 'chat' && (
         <div className="px-4 py-3 bg-accent/10 border-t border-accent/30 text-accent text-sm font-mono">
           Error: {chatError}
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="border-t border-border bg-surface">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <ChatInput 
-            onSend={handleSendMessage}
-            disabled={isStreaming}
-            placeholder={isStreaming ? 'AI processing...' : 'Enter encrypted message...'}
-          />
-          <p className="text-center text-xs text-text-muted mt-2 font-mono uppercase tracking-wider">
-            All messages encrypted with AES-256-GCM
-          </p>
+      {/* Input Area - Only show in chat mode */}
+      {mode === 'chat' && (
+        <div className="border-t border-border bg-surface">
+          <div className="max-w-3xl mx-auto px-4 py-4">
+            <ChatInput 
+              onSend={handleSendMessage}
+              disabled={isStreaming}
+              placeholder={isStreaming ? 'AI processing...' : 'Enter encrypted message...'}
+            />
+            <p className="text-center text-xs text-text-muted mt-2 font-mono uppercase tracking-wider">
+              All messages encrypted with AES-256-GCM
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function EmptyState() {
+function EmptyState({ onStartAnalysis }: { onStartAnalysis: () => void }) {
   return (
     <div className="flex-1 flex items-center justify-center bg-background">
       <div className="text-center max-w-md px-4">
@@ -133,13 +167,19 @@ function EmptyState() {
         </div>
         <h2 className="text-2xl font-black mb-4 tracking-tight text-text-primary">INITIATE SECURE DIALOGUE</h2>
         <p className="text-text-secondary mb-8 leading-relaxed">
-          Begin an encrypted conversation with our AI. 
-          Your messages are secured with military-grade encryption.
+          Begin an encrypted conversation with our AI, or launch a forensic analysis 
+          of a narrative using the Obsidian Prism framework.
         </p>
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-3">
           <SuggestionChip text="Verify encryption protocols" />
-          <SuggestionChip text="Explain zero-knowledge architecture" />
           <SuggestionChip text="How does wallet auth work?" />
+          <button
+            onClick={onStartAnalysis}
+            className="px-4 py-2 bg-accent hover:bg-accent-dark text-white text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            <FileSearch className="w-4 h-4" />
+            Analyze Article
+          </button>
         </div>
       </div>
     </div>
