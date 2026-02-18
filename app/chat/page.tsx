@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -8,6 +8,7 @@ import { ChatInterface } from '@/components/chat/ChatInterface';
 import { Sidebar } from '@/components/chat/Sidebar';
 import { useConversations } from '@/hooks/useConversations';
 import { useEncryption } from '@/hooks/useEncryption';
+import { useEncryptionStore } from '@/lib/store/encryptionStore';
 import { Shield } from '@/components/icons';
 
 export default function ChatPage() {
@@ -23,12 +24,27 @@ export default function ChatPage() {
     loadConversations 
   } = useConversations();
 
-  // Derive encryption key on mount
+  // Track if we've attempted key derivation
+  const hasAttemptedDerivation = useRef(false);
+
+  // Derive encryption key once on mount when wallet is connected
   useEffect(() => {
-    if (isConnected && address) {
-      deriveKey();
+    if (isConnected && address && !hasAttemptedDerivation.current) {
+      hasAttemptedDerivation.current = true;
+      // Check if key already exists in store
+      const existingKey = useEncryptionStore.getState().key;
+      if (!existingKey) {
+        deriveKey();
+      }
     }
   }, [isConnected, address, deriveKey]);
+
+  // Reset attempt flag when wallet disconnects
+  useEffect(() => {
+    if (!isConnected) {
+      hasAttemptedDerivation.current = false;
+    }
+  }, [isConnected]);
 
   // Load conversations when connected
   useEffect(() => {

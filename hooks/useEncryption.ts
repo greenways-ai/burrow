@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { 
   deriveKeyFromSignature, 
@@ -40,17 +40,32 @@ export function useEncryption(): UseEncryptionReturn {
   const setError = useEncryptionStore((state) => state.setError);
   const clearKey = useEncryptionStore((state) => state.clearKey);
 
+  // Use ref to track if we're currently deriving to prevent duplicate calls
+  const isDerivingRef = useRef(false);
+
   const deriveKey = useCallback(async (): Promise<CryptoKey | null> => {
+    // Check store first - if we have a key, return it immediately
+    const currentKey = useEncryptionStore.getState().key;
+    if (currentKey) {
+      return currentKey;
+    }
+
+    // Prevent multiple simultaneous derivation attempts
+    if (isDerivingRef.current) {
+      // Wait for derivation to complete
+      while (isDerivingRef.current) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      const derivedKey = useEncryptionStore.getState().key;
+      return derivedKey;
+    }
+
     if (!isConnected || !address) {
       setError('Wallet not connected');
       return null;
     }
 
-    // Return cached key if available
-    if (key) {
-      return key;
-    }
-
+    isDerivingRef.current = true;
     setIsDeriving(true);
     setError(null);
 
@@ -67,13 +82,14 @@ export function useEncryption(): UseEncryptionReturn {
       setError(errorMsg);
       return null;
     } finally {
+      isDerivingRef.current = false;
       setIsDeriving(false);
     }
-  }, [address, isConnected, key, signMessageAsync, setKey, setIsDeriving, setError]);
+  }, [address, isConnected, signMessageAsync, setKey, setIsDeriving, setError]);
 
   const encryptMessages = useCallback(async (messages: Message[]): Promise<string> => {
-    // Use cached key or derive if needed
-    let encryptionKey = key;
+    // Always check store first for the key
+    let encryptionKey = useEncryptionStore.getState().key;
     if (!encryptionKey) {
       encryptionKey = await deriveKey();
     }
@@ -81,11 +97,11 @@ export function useEncryption(): UseEncryptionReturn {
       throw new Error('Encryption key not available');
     }
     return encryptMessagesLib(messages, encryptionKey);
-  }, [key, deriveKey]);
+  }, [deriveKey]);
 
   const decryptMessages = useCallback(async (encryptedData: string): Promise<Message[]> => {
-    // Use cached key or derive if needed
-    let encryptionKey = key;
+    // Always check store first for the key
+    let encryptionKey = useEncryptionStore.getState().key;
     if (!encryptionKey) {
       encryptionKey = await deriveKey();
     }
@@ -93,11 +109,11 @@ export function useEncryption(): UseEncryptionReturn {
       throw new Error('Encryption key not available');
     }
     return decryptMessagesLib(encryptedData, encryptionKey);
-  }, [key, deriveKey]);
+  }, [deriveKey]);
 
   const encryptMessage = useCallback(async (message: Message): Promise<string> => {
-    // Use cached key or derive if needed
-    let encryptionKey = key;
+    // Always check store first for the key
+    let encryptionKey = useEncryptionStore.getState().key;
     if (!encryptionKey) {
       encryptionKey = await deriveKey();
     }
@@ -105,11 +121,11 @@ export function useEncryption(): UseEncryptionReturn {
       throw new Error('Encryption key not available');
     }
     return encryptMessageLib(message, encryptionKey);
-  }, [key, deriveKey]);
+  }, [deriveKey]);
 
   const decryptMessage = useCallback(async (encryptedData: string): Promise<Message> => {
-    // Use cached key or derive if needed
-    let encryptionKey = key;
+    // Always check store first for the key
+    let encryptionKey = useEncryptionStore.getState().key;
     if (!encryptionKey) {
       encryptionKey = await deriveKey();
     }
@@ -117,7 +133,7 @@ export function useEncryption(): UseEncryptionReturn {
       throw new Error('Encryption key not available');
     }
     return decryptMessageLib(encryptedData, encryptionKey);
-  }, [key, deriveKey]);
+  }, [deriveKey]);
 
   return {
     key,
