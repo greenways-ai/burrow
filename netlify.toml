@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "next build"
   publish = ".next"
 
 [build.environment]
@@ -10,6 +10,8 @@
 
 [context.production.environment]
   NEXT_PUBLIC_APP_URL = "https://burrow.greenways.ai"
+  NEXT_TELEMETRY_DISABLED = "1"
 
 [context.deploy-preview.environment]
   NEXT_PUBLIC_APP_URL = "https://deploy-preview--burrow-greenways-ai.netlify.app"
+  NEXT_TELEMETRY_DISABLED = "1"
