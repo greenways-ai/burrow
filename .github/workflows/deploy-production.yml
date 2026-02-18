@@ -77,6 +77,9 @@ jobs:
         source .secrets/burrow/prod/netlify.env
         echo "NETLIFY_AUTH_TOKEN=$NETLIFY_AUTH_TOKEN" >> $GITHUB_ENV
         echo "NETLIFY_SITE_ID=$NETLIFY_SITE_ID" >> $GITHUB_ENV
+        # Export all env vars from dot-secrets for the build
+        cat .secrets/burrow/prod/.env >> $GITHUB_ENV
+        # Also create .env.local for Next.js
         cp .secrets/burrow/prod/.env .env.local
         
     - name: Setup Node.js
