@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useAccount } from 'wagmi';
 import { Message } from '@/types';
 import { useConversations } from './useConversations';
 import { useEncryption } from './useEncryption';
@@ -21,6 +22,7 @@ export function useChat(): UseChatReturn {
   const [error, setError] = useState<string | null>(null);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 
+  const { address } = useAccount();
   const { createConversation, updateConversation, loadConversationMessages } = useConversations();
   const { encryptMessages } = useEncryption();
 
@@ -69,6 +71,7 @@ export function useChat(): UseChatReturn {
           conversationId: currentConversationId,
           message: content,
           encryptedMessages,
+          walletAddress: address,
         }),
       });
 

