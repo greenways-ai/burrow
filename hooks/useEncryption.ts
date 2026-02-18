@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
 import { 
   deriveKeyFromSignature, 
@@ -10,6 +10,7 @@ import {
   encryptMessage as encryptMessageLib,
   decryptMessage as decryptMessageLib,
 } from '@/lib/crypto';
+import { useEncryptionStore } from '@/lib/store/encryptionStore';
 import { Message } from '@/types';
 
 const ENCRYPTION_SALT = process.env.NEXT_PUBLIC_ENCRYPTION_SALT || 'burrow-default-salt-change-in-production';
@@ -30,9 +31,14 @@ export function useEncryption(): UseEncryptionReturn {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   
-  const [key, setKey] = useState<CryptoKey | null>(null);
-  const [isDeriving, setIsDeriving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Use global store for key state
+  const key = useEncryptionStore((state) => state.key);
+  const isDeriving = useEncryptionStore((state) => state.isDeriving);
+  const error = useEncryptionStore((state) => state.error);
+  const setKey = useEncryptionStore((state) => state.setKey);
+  const setIsDeriving = useEncryptionStore((state) => state.setIsDeriving);
+  const setError = useEncryptionStore((state) => state.setError);
+  const clearKey = useEncryptionStore((state) => state.clearKey);
 
   const deriveKey = useCallback(async (): Promise<CryptoKey | null> => {
     if (!isConnected || !address) {
@@ -40,6 +46,7 @@ export function useEncryption(): UseEncryptionReturn {
       return null;
     }
 
+    // Return cached key if available
     if (key) {
       return key;
     }
@@ -62,10 +69,14 @@ export function useEncryption(): UseEncryptionReturn {
     } finally {
       setIsDeriving(false);
     }
-  }, [address, isConnected, key, signMessageAsync]);
+  }, [address, isConnected, key, signMessageAsync, setKey, setIsDeriving, setError]);
 
   const encryptMessages = useCallback(async (messages: Message[]): Promise<string> => {
-    const encryptionKey = key || await deriveKey();
+    // Use cached key or derive if needed
+    let encryptionKey = key;
+    if (!encryptionKey) {
+      encryptionKey = await deriveKey();
+    }
     if (!encryptionKey) {
       throw new Error('Encryption key not available');
     }
@@ -73,7 +84,11 @@ export function useEncryption(): UseEncryptionReturn {
   }, [key, deriveKey]);
 
   const decryptMessages = useCallback(async (encryptedData: string): Promise<Message[]> => {
-    const encryptionKey = key || await deriveKey();
+    // Use cached key or derive if needed
+    let encryptionKey = key;
+    if (!encryptionKey) {
+      encryptionKey = await deriveKey();
+    }
     if (!encryptionKey) {
       throw new Error('Encryption key not available');
     }
@@ -81,7 +96,11 @@ export function useEncryption(): UseEncryptionReturn {
   }, [key, deriveKey]);
 
   const encryptMessage = useCallback(async (message: Message): Promise<string> => {
-    const encryptionKey = key || await deriveKey();
+    // Use cached key or derive if needed
+    let encryptionKey = key;
+    if (!encryptionKey) {
+      encryptionKey = await deriveKey();
+    }
     if (!encryptionKey) {
       throw new Error('Encryption key not available');
     }
@@ -89,17 +108,16 @@ export function useEncryption(): UseEncryptionReturn {
   }, [key, deriveKey]);
 
   const decryptMessage = useCallback(async (encryptedData: string): Promise<Message> => {
-    const encryptionKey = key || await deriveKey();
+    // Use cached key or derive if needed
+    let encryptionKey = key;
+    if (!encryptionKey) {
+      encryptionKey = await deriveKey();
+    }
     if (!encryptionKey) {
       throw new Error('Encryption key not available');
     }
     return decryptMessageLib(encryptedData, encryptionKey);
   }, [key, deriveKey]);
-
-  const clearKey = useCallback(() => {
-    setKey(null);
-    setError(null);
-  }, []);
 
   return {
     key,
