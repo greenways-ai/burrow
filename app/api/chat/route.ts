@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase';
 import { createAIProvider } from '@/lib/ai';
 import { sendToTelegram } from '@/lib/telegram';
 import { Message } from '@/types';
-import wombatSystemPrompt from '@/.secret/prompts/wombat-tattva-full-0.md';
+import wombatSystemPrompt from '@/.secrets/prompts/wombat-tattva-full-0.md';
 
 export async function POST(request: NextRequest) {
   try {
