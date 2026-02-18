@@ -1,20 +1,17 @@
 'use client';
 
-import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { WagmiProvider } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import '@rainbow-me/rainbowkit/styles.css';
 
-const config = getDefaultConfig({
-  appName: 'Burrow - Private AI Chat',
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'YOUR_PROJECT_ID',
-  chains: [mainnet, sepolia],
-  ssr: true,
-});
+// Dynamic import to prevent SSR issues
+import dynamic from 'next/dynamic';
 
-const queryClient = new QueryClient();
+const DynamicWagmiProvider = dynamic(
+  () => import('./WagmiProvider').then((mod) => mod.WagmiProvider),
+  {
+    ssr: false,
+    loading: () => <div suppressHydrationWarning>{null}</div>,
+  }
+);
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -23,18 +20,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Return null on server to prevent hydration issues
+  // Return children without providers during SSR
   if (!mounted) {
-    return null;
+    return <div suppressHydrationWarning>{children}</div>;
   }
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          {children}
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <DynamicWagmiProvider>
+      {children}
+    </DynamicWagmiProvider>
   );
 }
