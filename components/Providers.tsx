@@ -11,7 +11,7 @@ const config = getDefaultConfig({
   appName: 'Burrow - Private AI Chat',
   projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'YOUR_PROJECT_ID',
   chains: [mainnet, sepolia],
-  ssr: false, // Disable SSR to prevent indexedDB errors
+  ssr: true,
 });
 
 const queryClient = new QueryClient();
@@ -23,13 +23,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
+  // Return null on server to prevent hydration issues
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <div style={{ visibility: mounted ? 'visible' : 'hidden' }}>
-            {children}
-          </div>
+          {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

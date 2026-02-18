@@ -82,9 +82,9 @@ export async function decryptString(
   encryptedMessage: EncryptedMessage,
   key: CryptoKey
 ): Promise<string> {
-  const iv = hexToBytes(encryptedMessage.iv);
-  const ciphertext = hexToBytes(encryptedMessage.ciphertext);
-  const tag = hexToBytes(encryptedMessage.tag);
+  const iv = new Uint8Array(hexToBytes(encryptedMessage.iv as `0x${string}`));
+  const ciphertext = new Uint8Array(hexToBytes(encryptedMessage.ciphertext as `0x${string}`));
+  const tag = new Uint8Array(hexToBytes(encryptedMessage.tag as `0x${string}`));
   
   // Combine ciphertext and tag for decryption
   const combined = new Uint8Array(ciphertext.length + tag.length);

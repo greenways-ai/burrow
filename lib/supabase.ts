@@ -19,10 +19,10 @@ export function createServiceClient() {
 
 // Set wallet context for RLS policies
 export async function setWalletContext(
-  client: ReturnType<typeof createClient>,
+  client: ReturnType<typeof createClient<Database>>,
   walletAddress: string
 ) {
-  await client.rpc('set_config', {
+  await (client as any).rpc('set_config', {
     key: 'app.current_wallet',
     value: walletAddress.toLowerCase(),
   });
