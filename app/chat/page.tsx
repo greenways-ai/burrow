@@ -12,7 +12,6 @@ import { useEncryptionStore } from '@/lib/store/encryptionStore';
 import { Shield } from '@/components/icons';
 
 export default function ChatPage() {
-  const [mounted, setMounted] = useState(false);
   const { isConnected, address } = useAccount();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -28,13 +27,9 @@ export default function ChatPage() {
   // Track if we've attempted key derivation
   const hasAttemptedDerivation = useRef(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Derive encryption key once on mount when wallet is connected
   useEffect(() => {
-    if (mounted && isConnected && address && !hasAttemptedDerivation.current) {
+    if (isConnected && address && !hasAttemptedDerivation.current) {
       hasAttemptedDerivation.current = true;
       // Check if key already exists in store
       const existingKey = useEncryptionStore.getState().key;
@@ -42,7 +37,7 @@ export default function ChatPage() {
         deriveKey();
       }
     }
-  }, [mounted, isConnected, address, deriveKey]);
+  }, [isConnected, address, deriveKey]);
 
   // Reset attempt flag when wallet disconnects
   useEffect(() => {
@@ -53,12 +48,10 @@ export default function ChatPage() {
 
   // Load conversations when connected
   useEffect(() => {
-    if (mounted && isConnected) {
+    if (isConnected) {
       loadConversations();
     }
-  }, [mounted, isConnected, loadConversations]);
-
-  if (!mounted) return null;
+  }, [isConnected, loadConversations]);
 
   if (!isConnected) {
     return (

@@ -23,16 +23,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return null;
-  }
-
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          {children}
+          <div style={{ visibility: mounted ? 'visible' : 'hidden' }}>
+            {children}
+          </div>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
