@@ -72,6 +72,11 @@ jobs:
       run: supabase db push
       env:
         SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Deploy Edge Functions
+      run: supabase functions deploy --project-ref ${{ env.PRODUCTION_SUPABASE_PROJECT_REF }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
 
   deploy-frontend-production:
     name: Deploy Frontend to Production
