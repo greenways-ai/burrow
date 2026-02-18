@@ -5,6 +5,7 @@ import { useAccount, useDisconnect } from 'wagmi';
 import Link from 'next/link';
 import { ConversationMetadata } from '@/types';
 import { Plus, Trash, ChevronLeft, Menu, LogOut, Fingerprint } from '@/components/icons';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useConversations } from '@/hooks/useConversations';
 import { truncateText, formatRelativeTime, truncateAddress } from '@/lib/utils/format';
 
@@ -138,7 +139,7 @@ export function Sidebar({
 
           {/* Footer */}
           <div className="p-4 border-t border-border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div className="text-sm">
                 <p className="font-mono text-xs text-text-secondary">{truncateAddress(address || '')}</p>
                 <p className="text-xs text-accent uppercase tracking-wider">Connected</p>
@@ -150,6 +151,9 @@ export function Sidebar({
               >
                 <LogOut className="w-5 h-5" />
               </button>
+            </div>
+            <div className="flex justify-center">
+              <ThemeToggle />
             </div>
           </div>
         </div>

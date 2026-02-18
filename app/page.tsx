@@ -4,6 +4,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
 import { Shield, Lock, MessageSquare, Wallet, Fingerprint, Scan, CheckCircle } from '@/components/icons';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -17,11 +18,14 @@ export default function Home() {
             <Fingerprint className="w-6 h-6 text-accent" />
             <span className="text-lg font-bold tracking-wider">BURROW</span>
           </div>
-          <ConnectButton 
-            showBalance={false}
-            chainStatus="none"
-            accountStatus="address"
-          />
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <ConnectButton 
+              showBalance={false}
+              chainStatus="none"
+              accountStatus="address"
+            />
+          </div>
         </div>
       </header>
 

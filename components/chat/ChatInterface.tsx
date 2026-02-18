@@ -7,6 +7,7 @@ import { useConversations } from '@/hooks/useConversations';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { Fingerprint, Lock, Scan } from '@/components/icons';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface ChatInterfaceProps {
   conversationId: string | null;
@@ -63,7 +64,7 @@ export function ChatInterface({
             <Fingerprint className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <h1 className="font-bold tracking-wide text-white">
+            <h1 className="font-bold tracking-wide text-text-primary">
               {conversationId ? 'SECURE SESSION' : 'NEW SESSION'}
             </h1>
             <div className="flex items-center gap-2 text-xs">
@@ -74,9 +75,10 @@ export function ChatInterface({
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <a
             href="/admin"
-            className="text-sm text-text-muted hover:text-white transition-colors uppercase tracking-wider text-xs"
+            className="text-sm text-text-muted hover:text-text-primary transition-colors uppercase tracking-wider text-xs"
           >
             Admin
           </a>

@@ -3,10 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
+  /* Accent - Red (consistent across themes) */
   --accent: #ff0000;
   --accent-dark: #cc0000;
+  --accent-light: #ff4444;
+  --accent-rgb: 255, 0, 0;
+
+  /* Dark theme (default) */
+  --background: #0a0a0a;
+  --foreground: #fafafa;
   --surface: #111111;
   --surface-hover: #1a1a1a;
   --border: #333333;
@@ -16,29 +21,43 @@
   --text-muted: #666666;
 }
 
+/* Light theme */
+:root.light {
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --surface: #ffffff;
+  --surface-hover: #f0f0f0;
+  --border: #e0e0e0;
+  --border-light: #c0c0c0;
+  --text-primary: #0a0a0a;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - adapts to theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: var(--surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--border-light);
 }
 
 /* Animations */
@@ -76,7 +95,7 @@ body {
   position: absolute;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ff0000, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
   animation: scan 2s linear infinite;
 }
 
@@ -90,19 +109,19 @@ body {
 }
 
 .prose pre {
-  background-color: #111;
+  background-color: var(--surface);
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
 }
 
 .prose code {
-  background-color: #111;
+  background-color: var(--surface);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-size: 0.875em;
-  color: #ff0000;
+  color: var(--accent);
 }
 
 .prose pre code {
@@ -113,22 +132,27 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #ff0000 0%, #ff4444 50%, #ff0000 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 50%, var(--accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glass effect */
+/* Glass effect - works in both themes */
 .glass {
-  background: rgba(17, 17, 17, 0.8);
+  background: rgba(var(--surface-rgb, 17, 17, 17), 0.8);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.1);
+}
+
+.light .glass {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(var(--accent-rgb), 0.1);
 }
 
 /* Red glow */
 .glow-red {
-  box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+  box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.3);
 }
 
 /* Tag styles */
@@ -137,19 +161,19 @@ body {
   align-items: center;
   padding: 6px 12px;
   background: transparent;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #a0a0a0;
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
 .tag:hover {
-  border-color: #ff0000;
-  color: #ff0000;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Status badge */
@@ -158,21 +182,30 @@ body {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255, 0, 0, 0.1);
-  border: 1px solid rgba(255, 0, 0, 0.3);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: 20px;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #ff0000;
+  color: var(--accent);
 }
 
 .status-badge::before {
   content: '';
   width: 6px;
   height: 6px;
-  background: #ff0000;
+  background: var(--accent);
   border-radius: 50%;
   animation: pulse 2s infinite;
+}
+
+/* Light mode specific adjustments */
+.light .prose pre {
+  background-color: #f5f5f5;
+}
+
+.light .prose code {
+  background-color: #f5f5f5;
 }

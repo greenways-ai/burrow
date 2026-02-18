@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import Link from 'next/link';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Fingerprint, ChevronLeft, Save, History } from '@/components/icons';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { truncateAddress } from '@/lib/utils/format';
 
 const ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS?.toLowerCase();
@@ -73,12 +74,15 @@ export default function AdminPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <div className="text-center">
           <div className="w-16 h-16 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-6 glow-red">
             <Fingerprint className="w-8 h-8 text-accent" />
           </div>
-          <h1 className="text-2xl font-black mb-4 tracking-tight">ADMIN ACCESS</h1>
+          <h1 className="text-2xl font-black mb-4 tracking-tight text-text-primary">ADMIN ACCESS</h1>
           <p className="text-text-secondary mb-8">
             Connect your wallet to access the admin panel.
           </p>
@@ -94,7 +98,10 @@ export default function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <div className="text-center">
           <h1 className="text-2xl font-black mb-4 text-accent">ACCESS DENIED</h1>
           <p className="text-text-secondary mb-6">
@@ -113,7 +120,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -133,11 +140,14 @@ export default function AdminPage() {
             </div>
           </div>
           
-          <ConnectButton 
-            showBalance={false}
-            chainStatus="none"
-            accountStatus="address"
-          />
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <ConnectButton 
+              showBalance={false}
+              chainStatus="none"
+              accountStatus="address"
+            />
+          </div>
         </div>
       </header>
 

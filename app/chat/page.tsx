@@ -9,6 +9,7 @@ import { useConversations } from '@/hooks/useConversations';
 import { useEncryption } from '@/hooks/useEncryption';
 import { useEncryptionStore } from '@/lib/store/encryptionStore';
 import { Fingerprint, Scan } from '@/components/icons';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function ChatPage() {
   const { isConnected, address } = useAccount();
@@ -48,12 +49,15 @@ export default function ChatPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <div className="text-center max-w-md">
           <div className="w-20 h-20 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-8 glow-red">
             <Fingerprint className="w-10 h-10 text-accent" />
           </div>
-          <h1 className="text-3xl font-black mb-4 tracking-tight">INITIALIZE CONNECTION</h1>
+          <h1 className="text-3xl font-black mb-4 tracking-tight text-text-primary">INITIALIZE CONNECTION</h1>
           <p className="text-text-secondary mb-8 leading-relaxed">
             Connect your wallet to establish an encrypted session. 
             Your private key never leaves your device.
@@ -70,7 +74,10 @@ export default function ChatPage() {
 
   if (isDeriving) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-black relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background relative overflow-hidden">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <div className="absolute inset-0 scan-line opacity-50" />
         <div className="w-16 h-16 border-2 border-accent/30 border-t-accent rounded-full animate-spin mb-6" />
         <p className="text-accent font-mono text-sm tracking-widest uppercase mb-2">Deriving Encryption Key</p>
@@ -81,7 +88,10 @@ export default function ChatPage() {
 
   if (encryptionError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <div className="text-center max-w-md">
           <h1 className="text-2xl font-black mb-4 text-accent">Encryption Error</h1>
           <p className="text-text-secondary mb-6">{encryptionError}</p>
@@ -97,7 +107,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-black">
+    <div className="min-h-screen flex bg-background">
       <Sidebar
         conversations={conversations}
         isOpen={sidebarOpen}
