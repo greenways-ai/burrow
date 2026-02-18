@@ -1,4 +1,5 @@
-import { AIProvider, AIStreamOptions, Message, AIError } from './types';
+import { AIProvider, AIError } from './types';
+import { Message } from '@/types';
 
 export class VertexProvider implements AIProvider {
   private apiKey?: string;
