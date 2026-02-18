@@ -193,7 +193,7 @@ export default function AdminPage() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Enter the system prompt..."
-                  className="w-full h-64 px-4 py-3 bg-black border border-border focus:border-accent focus:outline-none text-white placeholder-text-muted font-mono text-sm resize-none"
+                  className="w-full h-64 px-4 py-3 bg-background border border-border focus:border-accent focus:outline-none text-text-primary placeholder-text-muted font-mono text-sm resize-none"
                 />
                 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">

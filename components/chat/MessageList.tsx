@@ -45,7 +45,7 @@ function MessageItem({ message, isLast }: { message: Message; isLast: boolean })
           className={`inline-block max-w-full text-left px-5 py-3 ${
             isUser 
               ? 'bg-accent text-white' 
-              : 'bg-surface border border-border text-white'
+              : 'bg-surface border border-border text-text-primary'
           }`}
         >
           {isUser ? (

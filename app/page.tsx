@@ -10,7 +10,7 @@ export default function Home() {
   const { isConnected } = useAccount();
 
   return (
-    <div className="min-h-screen flex flex-col bg-black">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -145,12 +145,12 @@ function FeatureCard({
   metricLabel: string;
 }) {
   return (
-    <div className="p-8 bg-black border border-border hover:border-accent/50 transition-all group">
+    <div className="p-8 bg-surface border border-border hover:border-accent/50 transition-all group">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xs font-medium tracking-widest uppercase text-text-muted">{label}</span>
       </div>
       <div className="mb-6">{icon}</div>
-      <h3 className="text-xl font-bold mb-3 text-white">{title}</h3>
+      <h3 className="text-xl font-bold mb-3 text-text-primary">{title}</h3>
       <p className="text-text-secondary text-sm mb-6 leading-relaxed">{description}</p>
       <div className="pt-6 border-t border-border">
         <div className="text-3xl font-black text-accent">{metric}</div>

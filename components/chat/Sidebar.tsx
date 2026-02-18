@@ -112,7 +112,7 @@ export function Sidebar({
                   }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate text-white">
+                    <p className="font-medium text-sm truncate text-text-primary">
                       {truncateText(conv.title, 40)}
                     </p>
                     <p className="text-xs text-text-muted mt-1 font-mono">
@@ -162,7 +162,7 @@ export function Sidebar({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/80 z-30"
+          className="lg:hidden fixed inset-0 bg-background/80 z-30"
           onClick={onToggle}
         />
       )}

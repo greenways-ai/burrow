@@ -50,7 +50,7 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
         placeholder={placeholder || 'Enter encrypted message...'}
         disabled={disabled}
         rows={1}
-        className="w-full px-4 py-3 pr-12 bg-black border border-border focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-text-muted font-mono text-sm resize-none"
+        className="w-full px-4 py-3 pr-12 bg-background border border-border focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-text-primary placeholder-text-muted font-mono text-sm resize-none"
         style={{ minHeight: '52px', maxHeight: '200px' }}
       />
       

@@ -56,7 +56,7 @@ export function ChatInterface({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-black">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-surface">
         <div className="flex items-center gap-4">
@@ -126,12 +126,12 @@ export function ChatInterface({
 
 function EmptyState() {
   return (
-    <div className="flex-1 flex items-center justify-center">
+    <div className="flex-1 flex items-center justify-center bg-background">
       <div className="text-center max-w-md px-4">
         <div className="w-20 h-20 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-8 glow-red">
           <Scan className="w-10 h-10 text-accent" />
         </div>
-        <h2 className="text-2xl font-black mb-4 tracking-tight">INITIATE SECURE DIALOGUE</h2>
+        <h2 className="text-2xl font-black mb-4 tracking-tight text-text-primary">INITIATE SECURE DIALOGUE</h2>
         <p className="text-text-secondary mb-8 leading-relaxed">
           Begin an encrypted conversation with our AI. 
           Your messages are secured with military-grade encryption.
