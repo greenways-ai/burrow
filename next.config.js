@@ -16,6 +16,12 @@ const nextConfig = {
       lokijs: false,
     };
     
+    // Add raw-loader for .md files
+    config.module.rules.push({
+      test: /\.md$/,
+      type: 'asset/source',
+    });
+    
     // Exclude browser-only modules from server bundle
     if (isServer) {
       config.externals = config.externals || [];

@@ -3,53 +3,7 @@ import { createServiceClient } from '@/lib/supabase';
 import { createAIProvider } from '@/lib/ai';
 import { sendToTelegram } from '@/lib/telegram';
 import { Message } from '@/types';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-// Load the Wombat Tattva system prompt from .secrets
-let wombatSystemPrompt: string | null = null;
-try {
-  // Try multiple possible paths for .secrets/prompts/
-  const possiblePaths = [
-    join(process.cwd(), '.secrets', 'prompts', 'wombat-tattva-full-0.md'),
-    join(process.cwd(), '..', '.secrets', 'prompts', 'wombat-tattva-full-0.md'),
-    join(process.cwd(), '..', '..', '.secrets', 'prompts', 'wombat-tattva-full-0.md'),
-    '/Users/chris/Development/greenways/dot-secrets/prompts/wombat-tattva-full-0.md',
-  ];
-  
-  for (const path of possiblePaths) {
-    try {
-      wombatSystemPrompt = readFileSync(path, 'utf-8');
-      console.log('Loaded Wombat Tattva from:', path);
-      break;
-    } catch {
-      continue;
-    }
-  }
-  
-  if (!wombatSystemPrompt) {
-    console.log('Wombat Tattva not found in .secrets/prompts/, trying wombat/ directory...');
-    // Fallback to wombat directory for local dev
-    const fallbackPaths = [
-      join(process.cwd(), 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
-      join(process.cwd(), '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
-      join(process.cwd(), '..', '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
-      '/Users/chris/Development/greenways/wombat/kintsugi-3/sutras/wombat-tattva-full-0.md',
-    ];
-    
-    for (const path of fallbackPaths) {
-      try {
-        wombatSystemPrompt = readFileSync(path, 'utf-8');
-        console.log('Loaded Wombat Tattva from fallback:', path);
-        break;
-      } catch {
-        continue;
-      }
-    }
-  }
-} catch (e) {
-  console.log('Wombat system prompt not found, using default');
-}
+import wombatSystemPrompt from '@/prompts/wombat-tattva-full-0.md';
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,7 +22,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient();
 
     // Get active system prompt from DB, or use Wombat Tattva
-    let systemPrompt = wombatSystemPrompt || 'You are a helpful AI assistant.';
+    let systemPrompt = (wombatSystemPrompt as string) || 'You are a helpful AI assistant.';
     try {
       const { data: promptData } = await supabase
         .rpc('get_active_system_prompt');
