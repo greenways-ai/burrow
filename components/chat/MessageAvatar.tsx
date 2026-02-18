@@ -1,6 +1,6 @@
 export function User() {
   return (
-    <div className="w-8 h-8 rounded-full bg-burrow-500 flex items-center justify-center">
+    <div className="w-8 h-8 bg-accent flex items-center justify-center">
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
         viewBox="0 0 24 24" 
@@ -20,7 +20,7 @@ export function User() {
 
 export function Bot() {
   return (
-    <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+    <div className="w-8 h-8 bg-surface border border-border flex items-center justify-center">
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
         viewBox="0 0 24 24" 
@@ -29,7 +29,7 @@ export function Bot() {
         strokeWidth="2" 
         strokeLinecap="round" 
         strokeLinejoin="round" 
-        className="w-5 h-5 text-gray-300"
+        className="w-5 h-5 text-accent"
       >
         <rect x="3" y="11" width="18" height="10" rx="2" />
         <circle cx="12" cy="5" r="2" />

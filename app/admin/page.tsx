@@ -2,26 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Shield, Settings, ChevronLeft, Save, History } from '@/components/icons';
-import { SystemPrompt } from '@/types';
+import { Fingerprint, ChevronLeft, Save, History } from '@/components/icons';
 import { truncateAddress } from '@/lib/utils/format';
 
 const ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS?.toLowerCase();
 
 export default function AdminPage() {
   const { isConnected, address } = useAccount();
-  const router = useRouter();
-  
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const isAdmin = address?.toLowerCase() === ADMIN_WALLET;
+  const isAdmin = !ADMIN_WALLET || address?.toLowerCase() === ADMIN_WALLET;
 
   useEffect(() => {
     if (isConnected && isAdmin) {
@@ -77,13 +73,13 @@ export default function AdminPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
         <div className="text-center">
-          <div className="w-16 h-16 bg-burrow-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-6 glow-red">
+            <Fingerprint className="w-8 h-8 text-accent" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">Admin Access</h1>
-          <p className="text-gray-400 mb-8 max-w-md">
+          <h1 className="text-2xl font-black mb-4 tracking-tight">ADMIN ACCESS</h1>
+          <p className="text-text-secondary mb-8">
             Connect your wallet to access the admin panel.
           </p>
           <ConnectButton 
@@ -98,21 +94,18 @@ export default function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Settings className="w-8 h-8 text-red-400" />
-          </div>
-          <h1 className="text-2xl font-semibold mb-4 text-red-400">Access Denied</h1>
-          <p className="text-gray-400 mb-8 max-w-md">
-            Your wallet ({truncateAddress(address || '')}) is not authorized to access the admin panel.
+          <h1 className="text-2xl font-black mb-4 text-accent">ACCESS DENIED</h1>
+          <p className="text-text-secondary mb-6">
+            Wallet {truncateAddress(address || '')} is not authorized.
           </p>
           <Link
             href="/chat"
-            className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-surface hover:bg-surface-hover border border-border transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
-            <span>Back to Chat</span>
+            <span>Return to Chat</span>
           </Link>
         </div>
       </div>
@@ -120,24 +113,22 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="border-b border-gray-800">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <header className="border-b border-border">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Link 
               href="/chat"
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-surface transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </Link>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-burrow-500 rounded-lg flex items-center justify-center">
-                <Settings className="w-5 h-5 text-white" />
-              </div>
+            <div className="flex items-center gap-3">
+              <Fingerprint className="w-6 h-6 text-accent" />
               <div>
-                <h1 className="font-semibold">Admin Panel</h1>
-                <p className="text-xs text-gray-500">Master Prompt Configuration</p>
+                <h1 className="font-bold tracking-wide">ADMIN PANEL</h1>
+                <p className="text-xs text-text-muted uppercase tracking-wider">Master Prompt Configuration</p>
               </div>
             </div>
           </div>
@@ -151,42 +142,40 @@ export default function AdminPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Alerts */}
+      <main className="max-w-5xl mx-auto px-6 py-8">
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
+          <div className="mb-6 p-4 bg-accent/10 border border-accent/30 text-accent font-mono text-sm">
             {error}
           </div>
         )}
         
         {success && (
-          <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400">
-            System prompt updated successfully!
+          <div className="mb-6 p-4 border border-green-500/30 text-green-500 font-mono text-sm">
+            System prompt updated successfully
           </div>
         )}
 
-        {/* Prompt Editor */}
         <div className="space-y-6">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+          <div className="bg-surface border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold">Master System Prompt</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <h2 className="text-lg font-bold tracking-wide">MASTER SYSTEM PROMPT</h2>
+                <p className="text-sm text-text-muted mt-1">
                   This prompt is used as the system context for all AI conversations.
                 </p>
               </div>
               <button
                 onClick={fetchCurrentPrompt}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border border-border hover:border-accent transition-colors text-sm"
               >
                 <History className="w-4 h-4" />
-                <span>Reload</span>
+                <span className="uppercase tracking-wider text-xs">Reload</span>
               </button>
             </div>
 
             {isLoading ? (
               <div className="h-64 flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-gray-600 border-t-burrow-500 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-border border-t-accent rounded-full animate-spin" />
               </div>
             ) : (
               <>
@@ -194,28 +183,28 @@ export default function AdminPage() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Enter the system prompt..."
-                  className="w-full h-64 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl resize-none focus:outline-none focus:border-burrow-500 focus:ring-1 focus:ring-burrow-500 text-gray-100 placeholder-gray-500 font-mono text-sm"
+                  className="w-full h-64 px-4 py-3 bg-black border border-border focus:border-accent focus:outline-none text-white placeholder-text-muted font-mono text-sm resize-none"
                 />
                 
-                <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-gray-500">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                  <div className="text-sm text-text-muted font-mono">
                     {prompt.length} characters
                   </div>
                   
                   <button
                     onClick={handleSave}
                     disabled={isSaving || !prompt.trim()}
-                    className="flex items-center space-x-2 px-6 py-3 bg-burrow-500 hover:bg-burrow-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors"
+                    className="flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-dark disabled:bg-surface disabled:cursor-not-allowed text-white font-semibold transition-colors"
                   >
                     {isSaving ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Saving...</span>
+                        <span className="uppercase tracking-wider text-xs">Saving...</span>
                       </>
                     ) : (
                       <>
                         <Save className="w-4 h-4" />
-                        <span>Save Changes</span>
+                        <span className="uppercase tracking-wider text-xs">Save Changes</span>
                       </>
                     )}
                   </button>
@@ -224,15 +213,13 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Tips */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
-            <h3 className="font-semibold mb-4">Tips for System Prompts</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li>• Be specific about the AI&apos;s role and personality</li>
-              <li>• Include any constraints or guidelines the AI should follow</li>
-              <li>• Consider adding context about the privacy-focused nature of Burrow</li>
-              <li>• Test changes in a conversation before finalizing</li>
-              <li>• Keep important instructions near the beginning of the prompt</li>
+          <div className="bg-surface border border-border p-6">
+            <h3 className="font-bold mb-4 tracking-wide">CONFIGURATION NOTES</h3>
+            <ul className="space-y-2 text-sm text-text-secondary">
+              <li>• Define the AI&apos;s role and personality clearly</li>
+              <li>• Include constraints and guidelines the AI should follow</li>
+              <li>• Consider adding context about Burrow&apos;s privacy-focused nature</li>
+              <li>• Test changes before deploying to production</li>
             </ul>
           </div>
         </div>

@@ -47,19 +47,19 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
-        placeholder={placeholder || 'Type your message...'}
+        placeholder={placeholder || 'Enter encrypted message...'}
         disabled={disabled}
         rows={1}
-        className="w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-700 rounded-xl resize-none focus:outline-none focus:border-burrow-500 focus:ring-1 focus:ring-burrow-500 disabled:opacity-50 disabled:cursor-not-allowed text-gray-100 placeholder-gray-500"
+        className="w-full px-4 py-3 pr-12 bg-black border border-border focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder-text-muted font-mono text-sm resize-none"
         style={{ minHeight: '52px', maxHeight: '200px' }}
       />
       
       <button
         onClick={handleSend}
         disabled={!input.trim() || disabled}
-        className="absolute right-3 bottom-3 p-2 bg-burrow-500 hover:bg-burrow-600 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
+        className="absolute right-3 bottom-3 p-2 bg-accent hover:bg-accent-dark disabled:bg-surface disabled:cursor-not-allowed text-white transition-colors"
       >
-        <Send className="w-4 h-4 text-white" />
+        <Send className="w-4 h-4" />
       </button>
     </div>
   );

@@ -2,18 +2,16 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useAccount } from 'wagmi';
-import { useRouter } from 'next/navigation';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { Sidebar } from '@/components/chat/Sidebar';
 import { useConversations } from '@/hooks/useConversations';
 import { useEncryption } from '@/hooks/useEncryption';
 import { useEncryptionStore } from '@/lib/store/encryptionStore';
-import { Shield } from '@/components/icons';
+import { Fingerprint, Scan } from '@/components/icons';
 
 export default function ChatPage() {
   const { isConnected, address } = useAccount();
-  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   
@@ -24,14 +22,11 @@ export default function ChatPage() {
     loadConversations 
   } = useConversations();
 
-  // Track if we've attempted key derivation
   const hasAttemptedDerivation = useRef(false);
 
-  // Derive encryption key once on mount when wallet is connected
   useEffect(() => {
     if (isConnected && address && !hasAttemptedDerivation.current) {
       hasAttemptedDerivation.current = true;
-      // Check if key already exists in store
       const existingKey = useEncryptionStore.getState().key;
       if (!existingKey) {
         deriveKey();
@@ -39,14 +34,12 @@ export default function ChatPage() {
     }
   }, [isConnected, address, deriveKey]);
 
-  // Reset attempt flag when wallet disconnects
   useEffect(() => {
     if (!isConnected) {
       hasAttemptedDerivation.current = false;
     }
   }, [isConnected]);
 
-  // Load conversations when connected
   useEffect(() => {
     if (isConnected) {
       loadConversations();
@@ -55,15 +48,15 @@ export default function ChatPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-burrow-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-8 h-8 text-white" />
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 border border-accent/30 rounded-full flex items-center justify-center mx-auto mb-8 glow-red">
+            <Fingerprint className="w-10 h-10 text-accent" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">Connect Your Wallet</h1>
-          <p className="text-gray-400 mb-8 max-w-md">
-            Connect your wallet to access your encrypted conversations. 
-            Your private key is never shared with the server.
+          <h1 className="text-3xl font-black mb-4 tracking-tight">INITIALIZE CONNECTION</h1>
+          <p className="text-text-secondary mb-8 leading-relaxed">
+            Connect your wallet to establish an encrypted session. 
+            Your private key never leaves your device.
           </p>
           <ConnectButton 
             showBalance={false}
@@ -77,23 +70,24 @@ export default function ChatPage() {
 
   if (isDeriving) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-4 border-burrow-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-400">Deriving encryption key...</p>
-        <p className="text-sm text-gray-500 mt-2">Please sign the message in your wallet</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black relative overflow-hidden">
+        <div className="absolute inset-0 scan-line opacity-50" />
+        <div className="w-16 h-16 border-2 border-accent/30 border-t-accent rounded-full animate-spin mb-6" />
+        <p className="text-accent font-mono text-sm tracking-widest uppercase mb-2">Deriving Encryption Key</p>
+        <p className="text-text-muted text-sm">Please sign the verification message in your wallet</p>
       </div>
     );
   }
 
   if (encryptionError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
         <div className="text-center max-w-md">
-          <h1 className="text-2xl font-semibold mb-4 text-red-400">Encryption Error</h1>
-          <p className="text-gray-400 mb-6">{encryptionError}</p>
+          <h1 className="text-2xl font-black mb-4 text-accent">Encryption Error</h1>
+          <p className="text-text-secondary mb-6">{encryptionError}</p>
           <button
             onClick={() => deriveKey()}
-            className="px-6 py-3 bg-burrow-500 hover:bg-burrow-600 text-white rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-accent hover:bg-accent-dark text-white font-semibold transition-colors"
           >
             Retry
           </button>
@@ -103,8 +97,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
+    <div className="min-h-screen flex bg-black">
       <Sidebar
         conversations={conversations}
         isOpen={sidebarOpen}
@@ -114,7 +107,6 @@ export default function ChatPage() {
         isLoading={isLoadingConversations}
       />
 
-      {/* Main Chat Area */}
       <main className="flex-1 flex flex-col min-w-0">
         <ChatInterface
           conversationId={selectedConversationId}

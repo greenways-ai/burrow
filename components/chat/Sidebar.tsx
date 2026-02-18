@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import Link from 'next/link';
 import { ConversationMetadata } from '@/types';
-import { Plus, Trash, ChevronLeft, Menu, LogOut, Shield } from '@/components/icons';
+import { Plus, Trash, ChevronLeft, Menu, LogOut, Fingerprint } from '@/components/icons';
 import { useConversations } from '@/hooks/useConversations';
 import { truncateText, formatRelativeTime, truncateAddress } from '@/lib/utils/format';
 
@@ -52,30 +52,28 @@ export function Sidebar({
       {/* Mobile Toggle */}
       <button
         onClick={onToggle}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 bg-surface border border-border"
       >
         {isOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-80 bg-gray-900 border-r border-gray-800 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-80 bg-surface border-r border-border transform transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:opacity-0 lg:overflow-hidden'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b border-gray-800">
-            <div className="flex items-center justify-between mb-4">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-burrow-500 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-semibold">Burrow</span>
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center justify-between mb-6">
+              <Link href="/" className="flex items-center gap-3">
+                <Fingerprint className="w-6 h-6 text-accent" />
+                <span className="font-bold tracking-wider">BURROW</span>
               </Link>
               <button
                 onClick={onToggle}
-                className="hidden lg:block p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
+                className="hidden lg:block p-2 hover:bg-surface-hover transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -83,52 +81,52 @@ export function Sidebar({
             
             <button
               onClick={handleNewChat}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-burrow-500 hover:bg-burrow-600 text-white rounded-xl font-medium transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent hover:bg-accent-dark text-white font-semibold transition-colors"
             >
               <Plus className="w-5 h-5" />
-              <span>New Chat</span>
+              <span className="tracking-wide">NEW CHAT</span>
             </button>
           </div>
 
           {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          <div className="flex-1 overflow-y-auto p-3 space-y-1">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-gray-600 border-t-burrow-500 rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
               </div>
             ) : conversations.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>No conversations yet</p>
-                <p className="text-sm mt-1">Start a new chat to begin</p>
+              <div className="text-center py-8 text-text-muted">
+                <p className="text-sm">No conversations found</p>
+                <p className="text-xs mt-1">Start a new encrypted chat</p>
               </div>
             ) : (
               conversations.map((conv) => (
                 <button
                   key={conv.id}
                   onClick={() => onSelect(conv.id)}
-                  className={`w-full group flex items-center justify-between p-3 rounded-xl text-left transition-colors ${
+                  className={`w-full group flex items-center justify-between p-3 text-left transition-all border-l-2 ${
                     selectedId === conv.id
-                      ? 'bg-gray-800 border border-gray-700'
-                      : 'hover:bg-gray-800/50'
+                      ? 'bg-surface-hover border-accent'
+                      : 'border-transparent hover:bg-surface-hover'
                   }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">
+                    <p className="font-medium text-sm truncate text-white">
                       {truncateText(conv.title, 40)}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-text-muted mt-1 font-mono">
                       {formatRelativeTime(conv.updated_at)}
                       <span className="mx-2">·</span>
-                      {conv.message_count} messages
+                      {conv.message_count} msgs
                     </p>
                   </div>
                   <button
                     onClick={(e) => handleDelete(e, conv.id)}
                     disabled={deletingId === conv.id}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-all"
+                    className="opacity-0 group-hover:opacity-100 p-2 hover:text-accent transition-all"
                   >
                     {deletingId === conv.id ? (
-                      <div className="w-4 h-4 border-2 border-gray-600 border-t-red-500 rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
                     ) : (
                       <Trash className="w-4 h-4" />
                     )}
@@ -139,15 +137,15 @@ export function Sidebar({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-800">
+          <div className="p-4 border-t border-border">
             <div className="flex items-center justify-between">
               <div className="text-sm">
-                <p className="font-medium">{truncateAddress(address || '')}</p>
-                <p className="text-xs text-gray-500">Connected</p>
+                <p className="font-mono text-xs text-text-secondary">{truncateAddress(address || '')}</p>
+                <p className="text-xs text-accent uppercase tracking-wider">Connected</p>
               </div>
               <button
                 onClick={() => disconnect()}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-2 hover:text-accent transition-colors"
                 title="Disconnect"
               >
                 <LogOut className="w-5 h-5" />
@@ -160,7 +158,7 @@ export function Sidebar({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-black/80 z-30"
           onClick={onToggle}
         />
       )}
