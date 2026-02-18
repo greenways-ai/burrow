@@ -1,0 +1,73 @@
+name: Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run migration on'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      direction:
+        description: 'Migration direction'
+        required: true
+        default: 'up'
+        type: choice
+        options:
+          - up
+          - down
+
+jobs:
+  migrate:
+    name: Run Database Migration
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: Checkout code with submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Load Supabase credentials
+      run: |
+        if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+          source .secrets/burrow/prod/supabase.env
+          echo "PROJECT_REF=$PRODUCTION_SUPABASE_PROJECT_REF" >> $GITHUB_ENV
+        else
+          source .secrets/burrow/staging/supabase.env
+          echo "PROJECT_REF=$STAGING_SUPABASE_PROJECT_REF" >> $GITHUB_ENV
+        fi
+        echo "SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN" >> $GITHUB_ENV
+      shell: bash
+      
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+        
+    - name: Link Supabase project
+      run: supabase link --project-ref $PROJECT_REF
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Run migration
+      run: |
+        if [ "${{ github.event.inputs.direction }}" = "down" ]; then
+          echo "Running migration reset..."
+          supabase db reset
+        else
+          echo "Running migration up..."
+          supabase db push
+        fi
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Verify migration
+      run: |
+        echo "Listing current database tables..."
+        supabase inspect db tables
