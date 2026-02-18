@@ -24,7 +24,7 @@ jobs:
         echo "Deploying from: ${{ github.ref }}"
         echo "Commit: ${{ github.sha }}"
 
-  deploy-supabase:
+  deploy-supabase-production:
     name: Deploy Supabase to Production
     runs-on: ubuntu-latest
     environment: production
@@ -37,30 +37,52 @@ jobs:
         submodules: recursive
         token: ${{ secrets.GH_TOKEN }}
       
+    - name: Load Supabase credentials from dot-secrets
+      run: |
+        if [ -f .secrets/burrow/prod/supabase.env ]; then
+          echo "Loading Supabase credentials from dot-secrets..."
+          while IFS='=' read -r key value; do
+            [[ "$key" =~ ^#.*$ ]] && continue
+            [[ -z "$key" ]] && continue
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            if [ -n "$value" ] && [[ ! "$value" =~ ^your- ]] && [[ ! "$value" =~ ^PASTE_ ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+              echo "Loaded: $key"
+            fi
+          done < .secrets/burrow/prod/supabase.env
+          echo "Supabase credentials loaded"
+        else
+          echo "Error: .secrets/burrow/prod/supabase.env not found"
+          exit 1
+        fi
+      shell: bash
+      
     - name: Setup Supabase CLI
       uses: supabase/setup-cli@v1
       with:
         version: latest
         
-    - name: Link Supabase project
-      run: |
-        source .secrets/burrow/prod/supabase.env
-        supabase link --project-ref $PRODUCTION_SUPABASE_PROJECT_REF
+    - name: Link to Production Project
+      run: supabase link --project-ref ${{ env.PRODUCTION_SUPABASE_PROJECT_REF }}
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
         
-    - name: Push database migrations
-      run: |
-        source .secrets/burrow/prod/supabase.env
-        supabase db push
+    - name: Push Database Migrations
+      run: supabase db push
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Deploy Edge Functions
+      run: supabase functions deploy --project-ref ${{ env.PRODUCTION_SUPABASE_PROJECT_REF }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
 
-  deploy-netlify:
-    name: Deploy to Netlify Production
+  deploy-frontend-production:
+    name: Deploy Frontend to Production
     runs-on: ubuntu-latest
+    needs: deploy-supabase-production
     environment: production
-    needs: [verify, deploy-supabase]
     
     steps:
     - name: Checkout code with submodules
@@ -68,36 +90,75 @@ jobs:
       with:
         submodules: recursive
         token: ${{ secrets.GH_TOKEN }}
-        
-    - name: Load environment from dot-secrets
+      
+    - name: Load all environment from dot-secrets
       run: |
-        # Source the env files for shell use
-        source .secrets/burrow/prod/.env
-        source .secrets/burrow/prod/netlify.env
+        # Load main .env file
+        if [ -f .secrets/burrow/prod/.env ]; then
+          echo "Loading production environment from dot-secrets..."
+          cp .secrets/burrow/prod/.env .env.local
+          while IFS='=' read -r key value; do
+            [[ "$key" =~ ^#.*$ ]] && continue
+            [[ -z "$key" ]] && continue
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            if [ -n "$value" ] && [[ ! "$value" =~ ^your- ]] && [[ ! "$value" =~ ^PASTE_ ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .secrets/burrow/prod/.env
+          echo "✓ Loaded .env"
+        fi
         
-        # Export specific env vars for Netlify deploy
-        echo "NETLIFY_AUTH_TOKEN=$NETLIFY_AUTH_TOKEN" >> $GITHUB_ENV
-        echo "NETLIFY_SITE_ID=$NETLIFY_SITE_ID" >> $GITHUB_ENV
+        # Load Supabase credentials
+        if [ -f .secrets/burrow/prod/supabase.env ]; then
+          while IFS='=' read -r key value; do
+            [[ "$key" =~ ^#.*$ ]] && continue
+            [[ -z "$key" ]] && continue
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            if [ -n "$value" ] && [[ ! "$value" =~ ^your- ]] && [[ ! "$value" =~ ^PASTE_ ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .secrets/burrow/prod/supabase.env
+          echo "✓ Loaded supabase.env"
+        fi
         
-        # Create .env.local for Next.js build with actual values
-        cat > .env.local << EOF
-NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-NEXT_PUBLIC_APP_DOMAIN=$NEXT_PUBLIC_APP_DOMAIN
-NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
-NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=$NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
-NEXT_PUBLIC_ENCRYPTION_SALT=$NEXT_PUBLIC_ENCRYPTION_SALT
-NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_KEY=$SUPABASE_SERVICE_KEY
-KIMI_API_KEY=$KIMI_API_KEY
-KIMI_MODEL=$KIMI_MODEL
-KIMI_BASE_URL=$KIMI_BASE_URL
-EOF
+        # Load Netlify credentials
+        if [ -f .secrets/burrow/prod/netlify.env ]; then
+          while IFS='=' read -r key value; do
+            [[ "$key" =~ ^#.*$ ]] && continue
+            [[ -z "$key" ]] && continue
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            if [ -n "$value" ] && [[ ! "$value" =~ ^your- ]] && [[ ! "$value" =~ ^PASTE_ ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .secrets/burrow/prod/netlify.env
+          echo "✓ Loaded netlify.env"
+        fi
         
+        # Load database credentials (if needed for build)
+        if [ -f .secrets/burrow/prod/database.env ]; then
+          while IFS='=' read -r key value; do
+            [[ "$key" =~ ^#.*$ ]] && continue
+            [[ -z "$key" ]] && continue
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            if [ -n "$value" ] && [[ ! "$value" =~ ^your- ]] && [[ ! "$value" =~ ^PASTE_ ]]; then
+              echo "$key=$value" >> $GITHUB_ENV
+            fi
+          done < .secrets/burrow/prod/database.env
+          echo "✓ Loaded database.env"
+        fi
+        
+        echo "All environments loaded from dot-secrets"
+      shell: bash
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'npm'
         
     - name: Install dependencies
       run: npm ci
@@ -106,7 +167,53 @@ EOF
       run: npm install -g netlify-cli
       
     - name: Build and Deploy to Netlify
-      run: netlify deploy --prod --build --site=$NETLIFY_SITE_ID
+      run: netlify deploy --prod --build
       env:
         NETLIFY_AUTH_TOKEN: ${{ env.NETLIFY_AUTH_TOKEN }}
         NETLIFY_SITE_ID: ${{ env.NETLIFY_SITE_ID }}
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [deploy-supabase-production, deploy-frontend-production]
+    if: github.ref_type == 'tag'
+    
+    steps:
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+        body: |
+          ## Changes
+          
+          See [CHANGELOG.md](CHANGELOG.md) for details.
+          
+          ## Deployment
+          
+          - Supabase: Production
+          - Frontend: Production
+
+  notify:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-supabase-production, deploy-frontend-production]
+    if: always()
+    
+    steps:
+    - name: Notify Success
+      if: needs.deploy-supabase-production.result == 'success' && needs.deploy-frontend-production.result == 'success'
+      run: |
+        echo "✅ Production deployment successful!"
+        echo "Version: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+      
+    - name: Notify Failure
+      if: needs.deploy-supabase-production.result == 'failure' || needs.deploy-frontend-production.result == 'failure'
+      run: |
+        echo "❌ Production deployment failed"
+        exit 1
