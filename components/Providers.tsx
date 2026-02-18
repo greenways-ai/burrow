@@ -11,7 +11,7 @@ const config = getDefaultConfig({
   appName: 'Burrow - Private AI Chat',
   projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'YOUR_PROJECT_ID',
   chains: [mainnet, sepolia],
-  ssr: true,
+  ssr: false, // Disable SSR to prevent indexedDB errors
 });
 
 const queryClient = new QueryClient();
@@ -23,8 +23,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
+  // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
-    return null;
+    return (
+      <div style={{ visibility: 'hidden' }}>
+        {children}
+      </div>
+    );
   }
 
   return (
