@@ -41,6 +41,5 @@
     "eslint-config-next": "15.1.6",
     "supabase": "^2.9.0",
     "typescript": "^5"
-  },
-  
+  }
 }
