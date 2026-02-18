@@ -1,19 +1,31 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Disable image optimization for static export compatibility
   images: {
     unoptimized: true,
   },
-  // Ensure trailing slashes for consistent routing
   trailingSlash: true,
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
       net: false,
       tls: false,
+      encoding: false,
+      'pino-pretty': false,
+      lokijs: false,
     };
+    
+    // Exclude browser-only modules from server bundle
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push(
+        '@wagmi/connectors',
+        '@rainbow-me/rainbowkit',
+        'wagmi'
+      );
+    }
+    
     return config;
   },
 };
