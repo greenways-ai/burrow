@@ -25,11 +25,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
-    return (
-      <div style={{ visibility: 'hidden' }}>
-        {children}
-      </div>
-    );
+    return null;
   }
 
   return (
