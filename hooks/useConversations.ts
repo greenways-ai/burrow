@@ -62,14 +62,17 @@ export function useConversations(): UseConversationsReturn {
     const title = generateConversationTitle(messages);
     const encryptedData = await encryptMessages(messages);
 
-    // Ensure user exists
-    await supabase.rpc('get_or_create_user', {
+    // Get or create user and get user_id
+    const { data: userData, error: userError } = await supabase.rpc('get_or_create_user', {
       p_wallet_address: address,
     });
+
+    if (userError) throw userError;
 
     const { data, error: insertError } = await supabase
       .from('conversations')
       .insert({
+        user_id: userData,
         title,
         encrypted_data: encryptedData,
         message_count: messages.length,
