@@ -42,21 +42,19 @@ jobs:
       with:
         version: latest
         
-    - name: Load Supabase credentials from dot-secrets
+    - name: Link Supabase project
       run: |
         source .secrets/burrow/prod/supabase.env
-        echo "SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN" >> $GITHUB_ENV
-        echo "SUPABASE_PROJECT_REF=$PRODUCTION_SUPABASE_PROJECT_REF" >> $GITHUB_ENV
-        
-    - name: Link Supabase project
-      run: supabase link --project-ref $SUPABASE_PROJECT_REF
+        supabase link --project-ref $PRODUCTION_SUPABASE_PROJECT_REF
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Push database migrations
-      run: supabase db push
+      run: |
+        source .secrets/burrow/prod/supabase.env
+        supabase db push
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
   deploy-netlify:
     name: Deploy to Netlify Production
@@ -73,14 +71,28 @@ jobs:
         
     - name: Load environment from dot-secrets
       run: |
+        # Source the env files for shell use
         source .secrets/burrow/prod/.env
         source .secrets/burrow/prod/netlify.env
+        
+        # Export specific env vars for Netlify deploy
         echo "NETLIFY_AUTH_TOKEN=$NETLIFY_AUTH_TOKEN" >> $GITHUB_ENV
         echo "NETLIFY_SITE_ID=$NETLIFY_SITE_ID" >> $GITHUB_ENV
-        # Export all env vars from dot-secrets for the build
-        cat .secrets/burrow/prod/.env >> $GITHUB_ENV
-        # Also create .env.local for Next.js
-        cp .secrets/burrow/prod/.env .env.local
+        
+        # Create .env.local for Next.js build with actual values
+        cat > .env.local << EOF
+NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+NEXT_PUBLIC_APP_DOMAIN=$NEXT_PUBLIC_APP_DOMAIN
+NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=$NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
+NEXT_PUBLIC_ENCRYPTION_SALT=$NEXT_PUBLIC_ENCRYPTION_SALT
+NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_KEY=$SUPABASE_SERVICE_KEY
+KIMI_API_KEY=$KIMI_API_KEY
+KIMI_MODEL=$KIMI_MODEL
+KIMI_BASE_URL=$KIMI_BASE_URL
+EOF
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
