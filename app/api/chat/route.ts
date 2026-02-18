@@ -6,15 +6,15 @@ import { Message } from '@/types';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-// Load the Wombat Tattva system prompt
+// Load the Wombat Tattva system prompt from .secrets
 let wombatSystemPrompt: string | null = null;
 try {
-  // Try multiple possible paths
+  // Try multiple possible paths for .secrets/prompts/
   const possiblePaths = [
-    join(process.cwd(), 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
-    join(process.cwd(), '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
-    join(process.cwd(), '..', '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
-    '/Users/chris/Development/greenways/wombat/kintsugi-3/sutras/wombat-tattva-full-0.md',
+    join(process.cwd(), '.secrets', 'prompts', 'wombat-tattva-full-0.md'),
+    join(process.cwd(), '..', '.secrets', 'prompts', 'wombat-tattva-full-0.md'),
+    join(process.cwd(), '..', '..', '.secrets', 'prompts', 'wombat-tattva-full-0.md'),
+    '/Users/chris/Development/greenways/dot-secrets/prompts/wombat-tattva-full-0.md',
   ];
   
   for (const path of possiblePaths) {
@@ -24,6 +24,27 @@ try {
       break;
     } catch {
       continue;
+    }
+  }
+  
+  if (!wombatSystemPrompt) {
+    console.log('Wombat Tattva not found in .secrets/prompts/, trying wombat/ directory...');
+    // Fallback to wombat directory for local dev
+    const fallbackPaths = [
+      join(process.cwd(), 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
+      join(process.cwd(), '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
+      join(process.cwd(), '..', '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
+      '/Users/chris/Development/greenways/wombat/kintsugi-3/sutras/wombat-tattva-full-0.md',
+    ];
+    
+    for (const path of fallbackPaths) {
+      try {
+        wombatSystemPrompt = readFileSync(path, 'utf-8');
+        console.log('Loaded Wombat Tattva from fallback:', path);
+        break;
+      } catch {
+        continue;
+      }
     }
   }
 } catch (e) {
