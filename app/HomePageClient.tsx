@@ -3,10 +3,19 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
-import { Shield, Lock, MessageSquare, Wallet, Fingerprint, Scan, CheckCircle } from '@/components/icons';
+import { Fingerprint, Scan, CheckCircle } from '@/components/icons';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ClientProviders } from './ClientProviders';
 
-export default function HomePage() {
+export default function HomePageClient() {
+  return (
+    <ClientProviders>
+      <HomePageContent />
+    </ClientProviders>
+  );
+}
+
+function HomePageContent() {
   const { isConnected } = useAccount();
 
   return (

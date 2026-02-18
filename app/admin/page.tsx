@@ -1,11 +1,16 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { ClientProviders } from '../ClientProviders';
 
-const AdminPage = dynamic(() => import('./AdminPage'), {
+const AdminPageContent = dynamic(() => import('./AdminPage'), {
   ssr: false,
 });
 
 export default function Page() {
-  return <AdminPage />;
+  return (
+    <ClientProviders>
+      <AdminPageContent />
+    </ClientProviders>
+  );
 }
