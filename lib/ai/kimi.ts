@@ -40,6 +40,12 @@ export class KimiProvider implements AIProvider {
       })),
     ];
 
+    console.log('Kimi API call:', {
+      url,
+      model: this.model,
+      messageCount: kimiMessages.length,
+    });
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -53,13 +59,12 @@ export class KimiProvider implements AIProvider {
         temperature: this.options.temperature,
         max_tokens: this.options.maxTokens,
         top_p: this.options.topP,
-        frequency_penalty: this.options.frequencyPenalty,
-        presence_penalty: this.options.presencePenalty,
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
+      console.error('Kimi API error:', response.status, error);
       throw new AIError(
         `Kimi API error: ${error}`,
         'KIMI_API_ERROR',
@@ -91,8 +96,13 @@ export class KimiProvider implements AIProvider {
 
           try {
             const data = JSON.parse(trimmed.slice(6));
-            const content = data.choices?.[0]?.delta?.content;
-            if (content) {
+            
+            // Handle different response formats
+            const content = data.choices?.[0]?.delta?.content || 
+                           data.choices?.[0]?.text ||
+                           data.delta?.content;
+                           
+            if (content && typeof content === 'string') {
               yield content;
             }
           } catch (e) {

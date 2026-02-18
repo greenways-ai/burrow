@@ -8,36 +8,39 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { conversationId, message, encryptedMessages } = body;
 
-    if (!message || !encryptedMessages) {
+    console.log('Chat API called with message:', message?.substring(0, 50));
+
+    if (!message) {
       return Response.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing message' },
         { status: 400 }
+      );
+    }
+
+    // Check if Kimi API key is configured
+    const kimiKey = process.env.KIMI_API_KEY;
+    if (!kimiKey) {
+      console.error('KIMI_API_KEY not configured');
+      return Response.json(
+        { error: 'AI provider not configured' },
+        { status: 500 }
       );
     }
 
     const supabase = createServiceClient();
 
     // Get active system prompt
-    const { data: promptData } = await supabase
-      .rpc('get_active_system_prompt');
-    
-    const systemPrompt = promptData || 'You are a helpful assistant.';
-
-    // Get messages from encrypted data (for context)
-    // In production, you might want to limit context window here
-    let previousMessages: Message[] = [];
+    let systemPrompt = 'You are a helpful AI assistant.';
     try {
-      const encryptedArray = JSON.parse(encryptedMessages);
-      // We can't decrypt on server - this is client-side encrypted
-      // Instead, we'll just use the current message
-      // The client will handle maintaining full context
+      const { data: promptData } = await supabase
+        .rpc('get_active_system_prompt');
+      if (promptData) systemPrompt = promptData;
     } catch (e) {
-      // Ignore parse errors
+      console.log('Using default system prompt');
     }
 
     // Create message for AI
     const messagesForAI: Message[] = [
-      ...previousMessages,
       {
         id: crypto.randomUUID(),
         role: 'user',
@@ -46,31 +49,31 @@ export async function POST(request: NextRequest) {
       },
     ];
 
+    console.log('Creating AI provider...');
     // Create AI provider
     const ai = createAIProvider();
 
+    console.log('Starting stream...');
     // Create streaming response
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          let conversationIdToSend = conversationId;
-
-          // Create new conversation if needed
-          if (!conversationIdToSend) {
-            // We'll create it on client after streaming completes
-            // For now, just indicate it's a new conversation
-          }
-
+          let fullContent = '';
+          
           // Stream AI response
           for await (const chunk of ai.stream(messagesForAI, systemPrompt)) {
+            fullContent += chunk;
             const data = JSON.stringify({ content: chunk });
             controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
           }
 
+          console.log('Stream complete, total length:', fullContent.length);
+          
           // Send done signal
           controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
+          console.error('Streaming error:', error);
           const errorMsg = error instanceof Error ? error.message : 'Streaming error';
           const data = JSON.stringify({ error: errorMsg });
           controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
@@ -87,6 +90,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error('API error:', error);
     const errorMsg = error instanceof Error ? error.message : 'Internal server error';
     return Response.json({ error: errorMsg }, { status: 500 });
   }
