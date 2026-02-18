@@ -21,10 +21,13 @@ export async function deriveKeyFromSignature(
   const hash = keccak256(combinedBytes);
   const keyMaterial = hexToBytes(hash);
   
+  // Convert to standard Uint8Array for WebCrypto compatibility
+  const keyBuffer = new Uint8Array(keyMaterial);
+  
   // Import as WebCrypto key
   return await crypto.subtle.importKey(
     'raw',
-    keyMaterial,
+    keyBuffer,
     { name: ENCRYPTION_ALGORITHM, length: KEY_LENGTH },
     false, // not extractable
     ['encrypt', 'decrypt']
