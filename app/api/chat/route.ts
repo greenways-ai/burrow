@@ -3,6 +3,32 @@ import { createServiceClient } from '@/lib/supabase';
 import { createAIProvider } from '@/lib/ai';
 import { sendToTelegram } from '@/lib/telegram';
 import { Message } from '@/types';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Load the Wombat Tattva system prompt
+let wombatSystemPrompt: string | null = null;
+try {
+  // Try multiple possible paths
+  const possiblePaths = [
+    join(process.cwd(), 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
+    join(process.cwd(), '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
+    join(process.cwd(), '..', '..', 'wombat', 'kintsugi-3', 'sutras', 'wombat-tattva-full-0.md'),
+    '/Users/chris/Development/greenways/wombat/kintsugi-3/sutras/wombat-tattva-full-0.md',
+  ];
+  
+  for (const path of possiblePaths) {
+    try {
+      wombatSystemPrompt = readFileSync(path, 'utf-8');
+      console.log('Loaded Wombat Tattva from:', path);
+      break;
+    } catch {
+      continue;
+    }
+  }
+} catch (e) {
+  console.log('Wombat system prompt not found, using default');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,14 +46,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // Get active system prompt
-    let systemPrompt = 'You are a helpful AI assistant.';
+    // Get active system prompt from DB, or use Wombat Tattva
+    let systemPrompt = wombatSystemPrompt || 'You are a helpful AI assistant.';
     try {
       const { data: promptData } = await supabase
         .rpc('get_active_system_prompt');
       if (promptData) systemPrompt = promptData;
     } catch (e) {
-      console.log('Using default system prompt');
+      console.log('Using Wombat Tattva system prompt');
     }
 
     // Try to create AI provider (Vertex)
@@ -41,7 +67,7 @@ export async function POST(request: NextRequest) {
 
         if (ai) {
           try {
-            console.log('Starting AI stream...');
+            console.log('Starting AI stream with Wombat Tattva...');
             const messagesForAI: Message[] = [
               {
                 id: crypto.randomUUID(),
