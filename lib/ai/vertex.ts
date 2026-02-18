@@ -1,135 +1,112 @@
-import { AIProvider, AIStreamOptions, AIError } from './types';
-import { Message } from '@/types';
-
-interface VertexMessage {
-  role: 'user' | 'model';
-  parts: { text: string }[];
-}
+import { AIProvider, AIStreamOptions, Message, AIError } from './types';
 
 export class VertexProvider implements AIProvider {
-  private projectId: string;
-  private location: string;
+  private apiKey?: string;
   private model: string;
-  private credentials: string;
-  private options: AIStreamOptions;
 
-  constructor(
-    projectId: string,
-    location: string,
-    model: string = 'gemini-2.0-pro-exp-02-05',
-    credentialsPath?: string,
-    options: AIStreamOptions = {}
-  ) {
-    this.projectId = projectId;
-    this.location = location;
+  constructor(apiKey?: string, model: string = 'gemini-1.5-flash') {
+    this.apiKey = apiKey;
     this.model = model;
-    this.credentials = credentialsPath || process.env.GOOGLE_APPLICATION_CREDENTIALS || '';
-    this.options = {
-      temperature: 0.7,
-      maxTokens: 4096,
-      ...options,
-    };
   }
 
-  async *stream(
-    messages: Message[],
-    systemPrompt: string
-  ): AsyncGenerator<string> {
-    // Get access token from credentials
-    const accessToken = await this.getAccessToken();
-    
-    const url = `https://${this.location}-aiplatform.googleapis.com/v1/projects/${this.projectId}/locations/${this.location}/publishers/google/models/${this.model}:streamGenerateContent`;
-
-    // Format messages for Vertex AI (Gemini format)
-    const vertexMessages: VertexMessage[] = [];
-    
-    // Add system prompt as first user message with special marker
-    if (systemPrompt) {
-      vertexMessages.push({
-        role: 'user',
-        parts: [{ text: `[System Instruction: ${systemPrompt}]` }],
-      });
-      vertexMessages.push({
-        role: 'model',
-        parts: [{ text: 'Understood.' }],
-      });
+  async *stream(messages: Message[], systemPrompt: string): AsyncGenerator<string> {
+    if (!this.apiKey) {
+      throw new AIError('Google API key not configured', 'VERTEX_CONFIG_ERROR');
     }
 
-    for (const message of messages) {
-      vertexMessages.push({
-        role: message.role === 'user' ? 'user' : 'model',
-        parts: [{ text: message.content }],
-      });
-    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}`;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+    const contents = messages.map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }],
+    }));
+
+    const body = {
+      contents,
+      systemInstruction: {
+        parts: [{ text: systemPrompt }],
       },
-      body: JSON.stringify({
-        contents: vertexMessages,
-        generationConfig: {
-          temperature: this.options.temperature,
-          maxOutputTokens: this.options.maxTokens,
-          topP: this.options.topP,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new AIError(
-        `Vertex AI error: ${error}`,
-        'VERTEX_API_ERROR',
-        response.status
-      );
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new AIError('No response body', 'EMPTY_RESPONSE');
-    }
-
-    const decoder = new TextDecoder();
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+        topP: 0.95,
+      },
+    };
 
     try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Vertex AI error:', response.status, error);
+        throw new AIError(
+          `Vertex AI error: ${error}`,
+          'VERTEX_API_ERROR',
+          response.status
+        );
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new AIError('No response body', 'VERTEX_API_ERROR');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           const trimmed = line.trim();
-          if (!trimmed) continue;
+          if (!trimmed || trimmed === '[{') continue;
 
           try {
-            const data = JSON.parse(trimmed);
-            const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (content) {
-              yield content;
+            // Handle streaming JSON format
+            const cleanLine = trimmed.replace(/^,/, '').replace(/\]$/, '');
+            if (!cleanLine) continue;
+
+            const data = JSON.parse(cleanLine);
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              yield text;
             }
           } catch (e) {
-            // Skip invalid JSON
+            // Skip malformed JSON lines
             continue;
           }
         }
       }
-    } finally {
-      reader.releaseLock();
+    } catch (error) {
+      if (error instanceof AIError) throw error;
+      console.error('Vertex AI streaming error:', error);
+      throw new AIError(
+        error instanceof Error ? error.message : 'Vertex AI streaming failed',
+        'VERTEX_STREAM_ERROR'
+      );
     }
+  }
+}
+
+export function createVertexProvider(): VertexProvider | null {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  const model = process.env.VERTEX_MODEL || 'gemini-1.5-flash';
+
+  if (!apiKey) {
+    console.log('Vertex AI not configured (missing GOOGLE_API_KEY)');
+    return null;
   }
 
-  private async getAccessToken(): Promise<string> {
-    // In production, use Google Auth library or service account
-    // For this implementation, we assume the token is provided via environment
-    const token = process.env.VERTEX_ACCESS_TOKEN;
-    if (!token) {
-      throw new AIError('Vertex access token not configured', 'MISSING_CREDENTIALS');
-    }
-    return token;
-  }
+  return new VertexProvider(apiKey, model);
 }

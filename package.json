@@ -12,6 +12,8 @@
     "db:reset": "supabase db reset"
   },
   "dependencies": {
+    "@google-cloud/aiplatform": "^6.4.0",
+    "@google-cloud/vertexai": "^1.10.0",
     "@rainbow-me/rainbowkit": "2.1.7",
     "@supabase/supabase-js": "^2.48.0",
     "@tanstack/query-core": "5.59.0",

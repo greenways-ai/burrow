@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { createServiceClient } from '@/lib/supabase';
+import { createAIProvider } from '@/lib/ai';
 import { sendToTelegram } from '@/lib/telegram';
+import { Message } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,37 +18,81 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = createServiceClient();
+
+    // Get active system prompt
+    let systemPrompt = 'You are a helpful AI assistant.';
+    try {
+      const { data: promptData } = await supabase
+        .rpc('get_active_system_prompt');
+      if (promptData) systemPrompt = promptData;
+    } catch (e) {
+      console.log('Using default system prompt');
+    }
+
+    // Try to create AI provider (Vertex)
+    const ai = createAIProvider();
+    
     // Create streaming response
     const stream = new ReadableStream({
       async start(controller) {
-        // Send confirmation message
-        const confirmationMessage = "✅ **Message Received**\n\nYour message has been forwarded securely. An agent will review and respond shortly.";
-        
-        // Stream word by word for effect
-        const words = confirmationMessage.split(' ');
-        for (const word of words) {
-          const chunk = word + ' ';
-          const data = JSON.stringify({ content: chunk });
-          controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-          await new Promise(resolve => setTimeout(resolve, 15));
+        let fullResponse = '';
+        let aiFailed = false;
+
+        if (ai) {
+          try {
+            console.log('Starting AI stream...');
+            const messagesForAI: Message[] = [
+              {
+                id: crypto.randomUUID(),
+                role: 'user',
+                content: message,
+                timestamp: Date.now(),
+              },
+            ];
+
+            // Stream AI response
+            for await (const chunk of ai.stream(messagesForAI, systemPrompt)) {
+              fullResponse += chunk;
+              const data = JSON.stringify({ content: chunk });
+              controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+            }
+            console.log('AI stream complete, length:', fullResponse.length);
+          } catch (aiError) {
+            console.error('AI error:', aiError);
+            aiFailed = true;
+          }
+        }
+
+        // If AI failed or not configured, use fallback
+        if (!ai || aiFailed) {
+          const fallbackMessage = aiFailed
+            ? "⚠️ **AI Service Unavailable**\n\nYour message has been forwarded to our team via Telegram. We'll respond shortly."
+            : "✅ **Message Received**\n\nYour message has been forwarded securely to our team. An agent will review and respond shortly.";
+          
+          fullResponse = fallbackMessage;
+          
+          // Stream fallback message
+          const words = fallbackMessage.split(' ');
+          for (const word of words) {
+            const chunk = word + ' ';
+            const data = JSON.stringify({ content: chunk });
+            controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+            await new Promise(resolve => setTimeout(resolve, 15));
+          }
         }
 
         // Send to Telegram
         try {
           await sendToTelegram({
             userMessage: message,
-            aiResponse: '[Forwarded to Telegram - awaiting human response]',
+            aiResponse: fullResponse,
             walletAddress: walletAddress || 'unknown',
             timestamp: Date.now(),
           });
           console.log('Message forwarded to Telegram');
         } catch (telegramError) {
           console.error('Telegram send error:', telegramError);
-          // Send error to user if Telegram fails
-          const errorData = JSON.stringify({ 
-            error: 'Failed to forward message. Please try again.' 
-          });
-          controller.enqueue(new TextEncoder().encode(`data: ${errorData}\n\n`));
         }
         
         // Send done signal
