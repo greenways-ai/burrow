@@ -31,19 +31,8 @@ jobs:
     needs: verify
     
     steps:
-    - name: Checkout code with submodules
+    - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        token: ${{ secrets.GITHUB_TOKEN }}
-      
-    - name: Load Supabase credentials from dot-secrets
-      run: |
-        echo "Loading Supabase credentials..."
-        source .secrets/burrow/prod/supabase.env
-        echo "SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN" >> $GITHUB_ENV
-        echo "PRODUCTION_SUPABASE_PROJECT_REF=$PRODUCTION_SUPABASE_PROJECT_REF" >> $GITHUB_ENV
-      shell: bash
       
     - name: Setup Supabase CLI
       uses: supabase/setup-cli@v1
@@ -51,14 +40,14 @@ jobs:
         version: latest
         
     - name: Link Supabase project
-      run: supabase link --project-ref $PRODUCTION_SUPABASE_PROJECT_REF
+      run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Push database migrations
       run: supabase db push
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ env.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
   deploy-netlify:
     name: Deploy to Netlify Production
@@ -67,19 +56,23 @@ jobs:
     needs: [verify, deploy-supabase]
     
     steps:
-    - name: Checkout code with submodules
+    - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        token: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: Load environment from dot-secrets
+    - name: Create .env.local
       run: |
-        echo "Loading production environment..."
-        source .secrets/burrow/prod/netlify.env
-        echo "NETLIFY_AUTH_TOKEN=$NETLIFY_AUTH_TOKEN" >> $GITHUB_ENV
-        echo "NETLIFY_SITE_ID=$NETLIFY_SITE_ID" >> $GITHUB_ENV
-        cp .secrets/burrow/prod/.env .env.local
+        cat > .env.local << 'EOF'
+        NEXT_PUBLIC_APP_URL=https://burrow.greenways.ai
+        NEXT_PUBLIC_APP_DOMAIN=burrow.greenways.ai
+        NEXT_PUBLIC_SITE_NAME=burrow-greenways-ai
+        NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${{ secrets.WALLET_CONNECT_PROJECT_ID }}
+        NEXT_PUBLIC_ENCRYPTION_SALT=${{ secrets.ENCRYPTION_SALT }}
+        NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+        SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
+        KIMI_API_KEY=${{ secrets.KIMI_API_KEY }}
+        KIMI_MODEL=kimi-k2-0711-longcontext
+        EOF
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -89,17 +82,10 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Install Netlify CLI
-      run: npm install -g netlify-cli
-      
     - name: Build and Deploy to Netlify
       run: |
-        # Build the Next.js app
-        npm run build
-        
-        # Deploy to Netlify using CLI with Next.js plugin
-        netlify deploy --prod --build --site=$NETLIFY_SITE_ID
+        npm install -g netlify-cli
+        netlify deploy --prod --build --site=${{ secrets.NETLIFY_SITE_ID }}
       env:
-        NETLIFY_AUTH_TOKEN: ${{ env.NETLIFY_AUTH_TOKEN }}
-        NETLIFY_SITE_ID: ${{ env.NETLIFY_SITE_ID }}
-        KIMI_API_KEY: ${{ env.KIMI_API_KEY }}
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
